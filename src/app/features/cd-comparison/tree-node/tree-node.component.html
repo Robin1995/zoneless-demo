@@ -1,0 +1,16 @@
+<div class="node" [class.dirty]="isDirty" [class.checked]="wasChecked" [attr.aria-label]="'Nodo ' + label">
+  <span class="node-label">{{ label }}</span>
+  @if (renderCount > 0) {
+    <span class="render-count" [class.hot]="renderCount > 2">{{ renderCount }}</span>
+  }
+  @if (showContent) {
+    <span class="node-content">{{ content }}</span>
+  }
+</div>
+@if (children.length > 0) {
+  <div class="children">
+    @for (child of children; track child) {
+      <app-tree-node [label]="child" [renderCount]="0" />
+    }
+  </div>
+}

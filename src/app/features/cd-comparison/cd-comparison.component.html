@@ -1,0 +1,97 @@
+<h1>🌲 Detección de Cambios: <em>Zone-based</em> vs <em>Zoneless</em></h1>
+<p class="subtitle">
+  Presiona el botón en cada árbol para simular un cambio en el nodo <strong>E</strong>.
+  Los contadores muestran cuántos nodos se re-renderizan en cada modelo.
+</p>
+
+<div class="grid">
+  <!-- ZONE BASED -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">
+        <span class="badge badge-red">Zone-based</span>
+        CD Global — top-down
+      </span>
+      <span class="badge badge-yellow">~33kB zone.js</span>
+    </div>
+    <div class="panel-body">
+      <app-zone-tree #zoneTree />
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-val red">{{ zoneTree.checkedCount() }}</div>
+          <div class="stat-lbl">nodos chequeados</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val red">{{ zoneTree.globalTick() }}</div>
+          <div class="stat-lbl">ticks de appRef</div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="primary" (click)="zoneTree.tick()">
+        Cambio en E → appRef.tick()
+      </button>
+      <button class="danger" (click)="zoneTree.reset()">Reset</button>
+    </div>
+  </div>
+
+  <!-- ZONELESS -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">
+        <span class="badge badge-green">Zoneless</span>
+        CD Semi-local — targeted
+      </span>
+      <span class="badge badge-green">0kB</span>
+    </div>
+    <div class="panel-body">
+      <app-zoneless-tree #zonelessTree />
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-val green">{{ zonelessTree.checkedCount() }}</div>
+          <div class="stat-lbl">nodos chequeados</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val green">{{ zonelessTree.skippedCount() }}</div>
+          <div class="stat-lbl">nodos saltados</div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="primary" (click)="zonelessTree.triggerChange()">
+        signal.set() → notify()
+      </button>
+      <button class="danger" (click)="zonelessTree.reset()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>¿Qué está pasando?</strong> Con Zone-based, cada vez que ocurre cualquier evento async
+  (click, timer, XHR), Angular llama <code>appRef.tick()</code> que recorre el árbol <em>completo</em>
+  de arriba abajo. Con Zoneless, solo los componentes con un Signal <strong>dirty</strong> se marcan,
+  y solo se recorre la rama afectada hasta la raíz (<code>markAncestors</code>).
+</div>
+
+<div class="key-insight">
+  <div class="insight-card">
+    <h3>⚙️ Zone-based — Cómo funciona</h3>
+    <ul>
+      <li>Zone.js parchea las APIs del browser</li>
+      <li>Intercepta DOM, XHR, Timers</li>
+      <li>Al vaciar la cola: <code>onMicrotaskEmpty</code></li>
+      <li>Angular dispara <code>appRef.tick()</code></li>
+      <li>Se chequean <strong>todos</strong> los nodos</li>
+    </ul>
+  </div>
+  <div class="insight-card">
+    <h3>🚀 Zoneless — Cómo funciona</h3>
+    <ul>
+      <li>Signals notifican cambios directamente</li>
+      <li>El Scheduler llama <code>notify()</code></li>
+      <li><code>markAncestors</code> sube hacia la raíz</li>
+      <li><code>markViewDirty</code> en la vista exacta</li>
+      <li>Solo se renderizan los nodos <strong>dirty</strong></li>
+    </ul>
+  </div>
+</div>

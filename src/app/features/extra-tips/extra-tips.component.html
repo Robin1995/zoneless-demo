@@ -1,0 +1,183 @@
+<h1>💡 Extra <em>Tips</em> para Zoneless</h1>
+<p class="subtitle">
+  Lo que cambia cuando quitas Zone.js: qué APIs son no-ops, qué debes
+  reemplazar, y las herramientas de debug que Angular provee.
+</p>
+
+<div class="tips-grid">
+  <!-- afterNextRender -->
+  <div class="tip-card">
+    <div class="tip-header">
+      🔄 afterNextRender / afterEveryRender
+      <span class="badge badge-green">reemplaza onStable</span>
+    </div>
+    <div class="tip-body">
+      <p class="tip-desc">
+        En Zoneless, <code>NgZone.onStable</code>,
+        <code>onMicrotaskEmpty</code> y <code>onUnstable</code>
+        <strong>nunca se disparan</strong>. Usa estas APIs en su lugar para
+        ejecutar código después del render.
+      </p>
+      <pre><code><span class="comment">// ❌ Antes (Zone-based)</span>
+<span class="keyword">this</span>.ngZone.onStable.<span class="fn">pipe</span>(<span class="fn">take</span>(1)).<span class="fn">subscribe</span>(() => &#123;
+  <span class="comment">// lógica post-render</span>
+&#125;);
+
+<span class="comment">// ✅ Ahora (Zoneless)</span>
+<span class="fn">afterNextRender</span>(() => &#123;
+  <span class="comment">// se ejecuta UNA vez tras el próximo render</span>
+&#125;);
+<span class="fn">afterEveryRender</span>(() => &#123;
+  <span class="comment">// se ejecuta tras CADA render</span>
+&#125;);</code></pre>
+      <div class="tip-demo">
+        <button class="primary" (click)="runAfterNextRender()">
+          Ejecutar afterNextRender()
+        </button>
+        @if (afterRenderMsg()) {
+          <div class="result">✅ {{ afterRenderMsg() }}</div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- NgZone no-ops -->
+  <div class="tip-card">
+    <div class="tip-header">
+      🟡 NgZone — no-ops seguros
+      <span class="badge badge-yellow">harmless</span>
+    </div>
+    <div class="tip-body">
+      <p class="tip-desc">
+        <code>NgZone.run()</code> y <code>runOutsideAngular()</code> se vuelven
+        no-ops en modo Zoneless. Son <strong>inofensivos</strong>, vale la pena
+        mantenerlos en librerías para compatibilidad.
+      </p>
+      <pre><code><span class="comment">// Estos son no-ops en Zoneless (pero no rompen nada)</span>
+<span class="keyword">this</span>.ngZone.<span class="fn">run</span>(() => &#123; ... &#125;);         <span class="comment">// no-op ✓</span>
+<span class="keyword">this</span>.ngZone.<span class="fn">runOutsideAngular</span>(() => &#123;&#125;); <span class="comment">// no-op ✓</span>
+
+<span class="comment">// ⚠️ Siempre true en Zoneless — evitar como condición</span>
+NgZone.<span class="fn">isInAngularZone</span>(); <span class="comment">// → always true</span>
+
+<span class="comment">// ⚠️ Nunca se dispara en Zoneless</span>
+ngZone.onMicrotaskEmpty  <span class="comment">// never fires</span>
+ngZone.onUnstable        <span class="comment">// never fires</span>
+ngZone.onStable          <span class="comment">// never fires</span></code></pre>
+    </div>
+  </div>
+
+  <!-- SSR + PendingTasks -->
+  <div class="tip-card">
+    <div class="tip-header">
+      🖥️ SSR — PendingTasks
+      <span class="badge badge-blue">para SSR/SSG</span>
+    </div>
+    <div class="tip-body">
+      <p class="tip-desc">
+        En SSR con Zoneless, usa <code>PendingTasks</code> para señalar trabajo
+        asíncrono pendiente antes de serializar el HTML. Zone.js hacía esto
+        automáticamente; ahora es explícito.
+      </p>
+      <pre><code><span class="keyword">import</span> &#123; PendingTasks &#125; <span class="keyword">from</span> <span class="string">'@angular/core'</span>;
+
+<span class="keyword">const</span> pendingTasks = <span class="fn">inject</span>(PendingTasks);
+
+<span class="keyword">async function</span> <span class="fn">loadData</span>() &#123;
+  <span class="keyword">const</span> cleanup = pendingTasks.<span class="fn">add</span>(); <span class="comment">// marca como pendiente</span>
+  <span class="keyword">try</span> &#123;
+    <span class="keyword">const</span> data = <span class="keyword">await</span> <span class="fn">fetch</span>(<span class="string">'/api/data'</span>);
+    <span class="comment">// SSR espera hasta que se llame cleanup()</span>
+  &#125; <span class="keyword">finally</span> &#123;
+    <span class="fn">cleanup</span>(); <span class="comment">// señala que terminó</span>
+  &#125;
+&#125;</code></pre>
+    </div>
+  </div>
+
+  <!-- provideCheckNoChangesConfig -->
+  <div class="tip-card">
+    <div class="tip-header">
+      🛡️ Dev Safeguard
+      <span class="badge badge-blue">solo desarrollo</span>
+    </div>
+    <div class="tip-body">
+      <p class="tip-desc">
+        <code>provideCheckNoChangesConfig</code> detecta actualizaciones
+        perdidas durante desarrollo. Verifica periódicamente que no haya cambios
+        de estado que no hayan triggerado CD.
+      </p>
+      <pre><code><span class="comment">// main.ts — solo en desarrollo</span>
+<span class="fn">bootstrapApplication</span>(AppComponent, &#123;
+  providers: [
+    <span class="fn">provideZonelessChangeDetection</span>(),
+    <span class="fn">provideCheckNoChangesConfig</span>(&#123;
+      interval: <span class="num">1000</span>, <span class="comment">// ms entre verificaciones</span>
+      exhaustive: <span class="keyword">true</span>
+    &#125;)
+  ]
+&#125;);</code></pre>
+      <div class="tip-demo" style="font-size: 0.75rem; color: var(--muted)">
+        ℹ️ Este safeguard lanza un error si detecta que un componente tiene
+        cambios no reflejados — útil para encontrar mutaciones directas que se
+        olvidan de <code>signal.set()</code>.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla de versiones -->
+<div class="version-table">
+  <h2>📅 Hoja de Ruta — Zoneless en Angular</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Versión</th>
+        <th>Qué cambió</th>
+        <th>API para activar</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>v17.1</td>
+        <td>Scheduler independiente de Zone.js</td>
+        <td><code>provideExperimentalZonelessChangeDetection()</code></td>
+        <td>🧪 Experimental</td>
+      </tr>
+      <tr>
+        <td>v18</td>
+        <td>Soporte oficial + modo Híbrido</td>
+        <td><code>provideExperimentalZonelessChangeDetection()</code></td>
+        <td>🧪 Experimental</td>
+      </tr>
+      <tr>
+        <td>v19+</td>
+        <td>Estabilización de APIs, migración masiva a OnPush</td>
+        <td><code>provideExperimentalZonelessChangeDetection()</code></td>
+        <td>🧪 Experimental</td>
+      </tr>
+      <tr>
+        <td>v20 <span class="tag-new">actual</span></td>
+        <td>Zoneless estable, <code>resource()</code> API estable</td>
+        <td><code>provideZonelessChangeDetection()</code></td>
+        <td><span class="check">✅ Estable</span></td>
+      </tr>
+      <tr>
+        <td>v21+</td>
+        <td>
+          Default — no provider needed, remove
+          <code>provideZoneChangeDetection()</code>
+        </td>
+        <td>Ninguna (es el default)</td>
+        <td><span class="check">✅ Default</span></td>
+      </tr>
+      <tr>
+        <td>v22</td>
+        <td>Zoneless es el estándar. Zone.js queda como legacy opt-in</td>
+        <td><code>provideZoneChangeDetection()</code> para volver atrás</td>
+        <td>🏆 Estándar</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

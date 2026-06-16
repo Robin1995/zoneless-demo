@@ -1,0 +1,110 @@
+:host { display: block; }
+
+.tree-container {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tree-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2.5rem;
+}
+.tree-row.tight { gap: 0.75rem; }
+
+.branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.connector-v {
+  width: 1px; height: 28px;
+  background: var(--border);
+}
+.connector-v.short { height: 18px; }
+
+.node {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  transition: all .25s;
+  position: relative;
+}
+.node.sm { width: 42px; height: 42px; }
+
+.node.ancestor {
+  border-color: var(--blue);
+  background: rgba(88,166,255,.12);
+}
+.node.skipped {
+  opacity: 0.4;
+  border-style: dashed;
+}
+.node.dirty {
+  border-color: var(--yellow);
+  background: rgba(210,153,34,.15);
+}
+.node.refreshed {
+  border-color: var(--green);
+  background: rgba(63,185,80,.15);
+  animation: pop .35s ease;
+}
+.node.target-node { border-color: var(--yellow); }
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.2); box-shadow: 0 0 10px rgba(63,185,80,.4); }
+  100% { transform: scale(1); }
+}
+
+.lbl { font-size: 0.8rem; font-weight: 700; color: var(--text); line-height: 1; }
+
+.cnt {
+  font-size: 0.6rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 4px;
+  position: absolute;
+  top: -6px; right: -4px;
+}
+.cnt.hot { color: var(--green); border-color: var(--green-dim); }
+
+.tag {
+  position: absolute; bottom: -18px;
+  font-size: 0.52rem; color: var(--yellow);
+  white-space: nowrap; font-family: var(--mono);
+}
+
+.tag-ancestor {
+  position: absolute; bottom: -18px;
+  font-size: 0.5rem; color: var(--blue);
+  white-space: nowrap; font-family: var(--mono);
+  opacity: 0; transition: opacity .3s;
+}
+.tag-ancestor.visible { opacity: 1; }
+
+.binding {
+  position: absolute; bottom: -16px;
+  font-size: 0.5rem; color: var(--accent);
+  font-family: var(--mono); white-space: nowrap;
+}
+
+.legend {
+  margin-top: 2.5rem;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.7rem; color: var(--muted);
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.green { background: var(--green); }
+.dot.blue  { background: var(--blue); }
+.dot.gray  { background: var(--border); }

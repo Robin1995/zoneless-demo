@@ -1,0 +1,33 @@
+<div class="user-card">
+  <div class="card-header">
+    <span class="badge badge-green">input() signal child</span>
+    <span class="render-badge fresh">
+      re-renders: {{ renderCount() }}
+      @if (lastRenderTime()) {
+        <span class="render-time">@ {{ lastRenderTime() }}</span>
+      }
+    </span>
+  </div>
+
+  <div class="user-row">
+    <div class="user-field">
+      <span class="field-lbl">name</span>
+      <span class="field-val">{{ user().name }}</span>
+    </div>
+    <div class="user-field">
+      <span class="field-lbl">score</span>
+      <span class="field-val accent">{{ user().score }}</span>
+    </div>
+    <div class="user-field">
+      <span class="field-lbl">level</span>
+      <span class="field-val">
+        <span class="badge" [class]="levelBadge().cls">{{ levelBadge().label }}</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="ref-info">
+    <code>readonly user = input.required&lt;UserStats&gt;()</code>
+    — el input <em>es</em> un Signal
+  </div>
+</div>

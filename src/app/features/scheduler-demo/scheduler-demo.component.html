@@ -1,0 +1,106 @@
+<h1>🔄 Deteccion de cambios: <em>antes</em> vs <em>ahora</em></h1>
+<p class="subtitle">
+  En Zoneless, <code>setTimeout</code> y HTTP no triggean CD automaticamente.
+  Izquierda: solucion manual. Derecha: APIs reactivas.
+</p>
+
+<div class="comparison-grid">
+
+  <!-- IZQUIERDA: componente OnPush con variables normales -->
+  <div class="side old-side">
+    <div class="side-header">
+      <span class="badge badge-red">Antes — variable + markForCheck()</span>
+    </div>
+    <app-old-style-demo (logEvent)="addOldLog($event)" />
+  </div>
+
+  <!-- DERECHA: signals + resource APIs -->
+  <div class="side new-side">
+    <div class="side-header">
+      <span class="badge badge-green">Ahora — Signals + resource APIs</span>
+    </div>
+
+    <div class="demo-card">
+      <div class="card-header">
+        <span class="card-title">setInterval + signal</span>
+        <span class="value-badge fresh">{{ signalTimer() }}s</span>
+      </div>
+      <p class="card-desc">
+        <code>signal.update()</code> notifica al scheduler automaticamente.
+        Cero <code>markForCheck()</code>.
+      </p>
+      <div class="controls">
+        <button class="primary" (click)="startSignalTimer()" [disabled]="signalTimerRunning()">Start</button>
+        <button (click)="stopSignalTimer()" [disabled]="!signalTimerRunning()">Stop</button>
+        <button (click)="resetSignalTimer()">Reset</button>
+      </div>
+      <pre class="code-hint-box green" [textContent]="timerNewCode"></pre>
+    </div>
+
+    <div class="demo-card">
+      <div class="card-header">
+        <span class="card-title">httpResource</span>
+        @if (httpPostLoading()) {
+          <span class="value-badge loading">cargando</span>
+        }
+      </div>
+      <p class="card-desc">
+        <code>httpResource()</code> reactivo y declarativo.
+        Cambia el id signal y la request se reenvía sola.
+      </p>
+      @if (currentHttpPost()) {
+        <div class="post-card fresh">
+          <span class="post-id">#{{ httpPost_id() }}</span>
+          <span class="post-title">{{ httpPost_title() }}</span>
+        </div>
+      }
+      <div class="controls">
+        <button class="primary" (click)="fetchNextHttp()">Next post (id: {{ httpPostId() }})</button>
+      </div>
+      <pre class="code-hint-box green" [textContent]="httpResourceCode"></pre>
+    </div>
+
+    <div class="demo-card">
+      <div class="card-header">
+        <span class="card-title">rxResource</span>
+        @if (rxPostLoading()) {
+          <span class="value-badge loading">cargando</span>
+        }
+      </div>
+      <p class="card-desc">
+        <code>rxResource()</code> igual pero el loader devuelve un
+        <strong>Observable</strong> — interop con RxJS existente.
+      </p>
+      @if (currentRxPost()) {
+        <div class="post-card fresh">
+          <span class="post-id">#{{ rxPost_id() }}</span>
+          <span class="post-title">{{ rxPost_title() }}</span>
+        </div>
+      }
+      <div class="controls">
+        <button class="primary" (click)="fetchNextRx()">Next post RxJS (id: {{ rxPostId() }})</button>
+      </div>
+      <pre class="code-hint-box green" [textContent]="rxResourceCode"></pre>
+    </div>
+
+  </div>
+</div>
+
+<div class="log-panel">
+  <div class="log-header">
+    Log en tiempo real
+    <button (click)="clearLog()">Limpiar</button>
+  </div>
+  <div class="log-body" role="log" aria-live="polite">
+    @for (entry of logs(); track entry.id) {
+      <div class="log-entry" [class]="entry.side">
+        <span class="log-time">{{ entry.time }}</span>
+        <span class="log-side">{{ entry.side === 'old' ? 'antes' : 'ahora' }}</span>
+        <span class="log-msg">{{ entry.msg }}</span>
+      </div>
+    }
+    @if (logs().length === 0) {
+      <span style="color:var(--muted)">Interactua con los controles para ver el log...</span>
+    }
+  </div>
+</div>

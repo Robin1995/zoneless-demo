@@ -1,0 +1,132 @@
+<h1>⚡ <em>Signals</em> como Reactive Consumers</h1>
+<p class="subtitle">
+  El mismo componente hijo con <code>OnPush</code> — tres formas de actualizar el padre
+  y cómo cada una afecta (o no) al hijo.
+</p>
+
+<div class="scenarios">
+
+  <!-- ── Escenario A: mutación directa ── -->
+  <div class="scenario-card stale">
+    <div class="scenario-header">
+      <div class="scenario-title">
+        <span class="badge badge-red">A</span>
+        Mutación directa del objeto
+      </div>
+      <span class="scenario-tag tag-bad">❌ hijo stale</span>
+    </div>
+
+    <div class="scenario-body">
+      <div class="explanation">
+        El padre muta <code>user.score++</code> directamente.
+        La <strong>referencia del objeto es la misma</strong> →
+        Angular OnPush no detecta ningún cambio → el hijo no se re-renderiza.
+      </div>
+
+      <div class="parent-state">
+        <span class="state-lbl">Padre sabe:</span>
+        <code>userA.score = {{ userA.score }}</code>
+        <code>userA.level = {{ userA.level }}</code>
+      </div>
+
+      <app-normal-counter [user]="userA" />
+
+      <div class="controls">
+        <button class="danger-outline" (click)="mutateA()">
+          userA.score++ <span class="code-hint">(misma referencia)</span>
+        </button>
+        <button (click)="resetA()">
+          Reset con spread <span class="code-hint">— nueva referencia</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Escenario B: spread operator ── -->
+  <div class="scenario-card fresh">
+    <div class="scenario-header">
+      <div class="scenario-title">
+        <span class="badge badge-yellow">B</span>
+        Spread operator — nueva referencia
+      </div>
+      <span class="scenario-tag tag-ok">✅ hijo actualiza</span>
+    </div>
+
+    <div class="scenario-body">
+      <div class="explanation">
+        El padre crea <code>userB = {{ "{ ...userB, score: n+1 }" }}</code>.
+        <strong>Nueva referencia</strong> →
+        Angular detecta el cambio de @Input → el hijo OnPush sí re-renderiza.
+      </div>
+
+      <div class="parent-state">
+        <span class="state-lbl">Padre sabe:</span>
+        <code>userB.score = {{ userB.score }}</code>
+        <code>userB.level = {{ userB.level }}</code>
+      </div>
+
+      <app-normal-counter [user]="userB" />
+
+      <div class="controls">
+        <button class="primary" (click)="updateB()">
+          userB = {{ "{ ...userB, score: n+1 }" }}
+        </button>
+        <button (click)="resetB()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Escenario C: input() signal ── -->
+  <div class="scenario-card signal">
+    <div class="scenario-header">
+      <div class="scenario-title">
+        <span class="badge badge-green">C</span>
+        input() signal — API moderna
+      </div>
+      <span class="scenario-tag tag-signal">⚡ reactivo</span>
+    </div>
+
+    <div class="scenario-body">
+      <div class="explanation">
+        <code>input()</code> declara el @Input como un <strong>Signal</strong>.
+        El hijo puede derivar <code>computed()</code> y <code>effect()</code>
+        directamente del input — sin <code>ngOnChanges</code> ni
+        <code>SimpleChanges</code>. El template es un reactive consumer nativo.
+      </div>
+
+      <div class="parent-state">
+        <span class="state-lbl">Padre pasa:</span>
+        <code>userSignal() = score {{ userSignal().score }}, level {{ userSignal().level }}</code>
+      </div>
+
+      <app-signal-counter [user]="userSignal()" />
+
+      <div class="controls">
+        <button class="primary" (click)="updateSignal()">
+          userSignal.update(u => ( ...u, score: n+1 ))
+        </button>
+        <button (click)="resetSignal()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Log -->
+<div class="log-panel">
+  <div class="log-header">
+    📋 Log de reactividad
+    <button (click)="clearLog()" style="font-size:0.72rem">Limpiar</button>
+  </div>
+  <div class="log-body" role="log" aria-live="polite">
+    @for (entry of logs(); track entry.id) {
+      <div class="log-entry">
+        <span class="log-time">{{ entry.time }}</span>
+        <span class="log-msg" [class]="entry.type">{{ entry.msg }}</span>
+      </div>
+    }
+    @if (logs().length === 0) {
+      <span style="color:var(--muted)">Interactúa con los botones para ver los eventos...</span>
+    }
+  </div>
+</div>

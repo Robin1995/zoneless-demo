@@ -1,0 +1,30 @@
+<div class="user-card">
+  <div class="card-header">
+    <span class="badge badge-blue">OnPush child</span>
+    <span class="render-badge" [class.fresh]="renderCount > 0">
+      re-renders: {{ renderCount }}
+      @if (lastRenderTime) {
+        <span class="render-time">@ {{ lastRenderTime }}</span>
+      }
+    </span>
+  </div>
+
+  <div class="user-row">
+    <div class="user-field">
+      <span class="field-lbl">name</span>
+      <span class="field-val">{{ user.name }}</span>
+    </div>
+    <div class="user-field">
+      <span class="field-lbl">score</span>
+      <span class="field-val accent">{{ user.score }}</span>
+    </div>
+    <div class="user-field">
+      <span class="field-lbl">level</span>
+      <span class="field-val">{{ user.level }}</span>
+    </div>
+  </div>
+
+  <div class="ref-info">
+    <code>@Input() user</code> — referencia recibida del padre
+  </div>
+</div>

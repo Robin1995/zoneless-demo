@@ -1,0 +1,61 @@
+<div class="tree-container" aria-label="Árbol Zone-based">
+  <div class="tree-row root-row">
+    <div class="node-wrap">
+      <div class="node" [class.checked]="globalTick() > 0">
+        <span class="lbl">A</span>
+        <span class="cnt" [class.hot]="renderA() > 3">{{ renderA() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector-v"></div>
+
+  <div class="tree-row">
+    <div class="branch">
+      <div class="node" [class.checked]="globalTick() > 0">
+        <span class="lbl">B</span>
+        <span class="cnt" [class.hot]="renderB() > 3">{{ renderB() }}</span>
+      </div>
+      <div class="connector-v short"></div>
+      <div class="tree-row tight">
+        <div class="node sm" [class.checked]="globalTick() > 0">
+          <span class="lbl">C</span><span class="cnt">{{ renderC() }}</span>
+        </div>
+        <div class="node sm" [class.checked]="globalTick() > 0">
+          <span class="lbl">D</span><span class="cnt">{{ renderD() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="branch">
+      <div class="node target-node" [class.checked]="globalTick() > 0">
+        <span class="lbl">E</span>
+        <span class="cnt hot">{{ renderE() }}</span>
+        <span class="tag">← cambio</span>
+      </div>
+      <div class="connector-v short"></div>
+      <div class="tree-row tight">
+        <div class="node sm" [class.checked]="globalTick() > 0">
+          <span class="lbl">F</span>
+          <span class="cnt">{{ renderF() }}</span>
+          <span class="binding">{{ "{{ title() }}" }}</span>
+        </div>
+        <div class="node sm" [class.checked]="globalTick() > 0">
+          <span class="lbl">G</span>
+          <span class="cnt">{{ renderG() }}</span>
+          <span class="binding">{{ "{{ count() }}" }}</span>
+        </div>
+        <div class="node sm" [class.checked]="globalTick() > 0">
+          <span class="lbl">H</span>
+          <span class="cnt">{{ renderH() }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="dot green"></span> Chequeado
+    &nbsp;
+    <span class="dot red"></span> Fuente del cambio
+  </div>
+</div>

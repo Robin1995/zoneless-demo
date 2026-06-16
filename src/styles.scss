@@ -1,0 +1,83 @@
+/* ===== Global Styles — Angular Zoneless Demo ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0d1117;
+  --surface:   #161b22;
+  --surface2:  #21262d;
+  --border:    #30363d;
+  --text:      #e6edf3;
+  --muted:     #8b949e;
+  --green:     #3fb950;
+  --green-dim: #238636;
+  --red:       #f85149;
+  --yellow:    #d29922;
+  --blue:      #58a6ff;
+  --purple:    #bc8cff;
+  --accent:    #79c0ff;
+  --font:      'Inter', system-ui, sans-serif;
+  --mono:      'JetBrains Mono', 'Fira Code', monospace;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Code blocks */
+code, pre {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+}
+
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  line-height: 1.7;
+}
+
+.keyword  { color: var(--purple); }
+.fn       { color: var(--blue); }
+.string   { color: var(--green); }
+.comment  { color: var(--muted); font-style: italic; }
+.type     { color: var(--accent); }
+
+/* Utility */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.badge-green  { background: rgba(63,185,80,.15); color: var(--green); border: 1px solid var(--green-dim); }
+.badge-red    { background: rgba(248,81,73,.15);  color: var(--red);   border: 1px solid #6e1a19; }
+.badge-blue   { background: rgba(88,166,255,.15); color: var(--blue);  border: 1px solid #1f4b8e; }
+.badge-yellow { background: rgba(210,153,34,.15); color: var(--yellow);border: 1px solid #7d4e00; }
+
+/* Highlight box */
+.callout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.callout strong { color: var(--text); }

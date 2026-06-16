@@ -1,0 +1,62 @@
+<div class="tree-container" aria-label="Árbol Zoneless">
+  <div class="tree-row root-row">
+    <div class="node-wrap">
+      <div class="node" [class.ancestor]="tick() > 0">
+        <span class="lbl">A</span>
+        <span class="cnt">{{ renderA() }}</span>
+        <span class="tag-ancestor" [class.visible]="tick() > 0">HasChildToRefresh</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector-v"></div>
+
+  <div class="tree-row">
+    <div class="branch">
+      <div class="node" [class.skipped]="tick() > 0">
+        <span class="lbl">B</span>
+        <span class="cnt">{{ renderB() }}</span>
+      </div>
+      <div class="connector-v short"></div>
+      <div class="tree-row tight">
+        <div class="node sm" [class.skipped]="tick() > 0">
+          <span class="lbl">C</span><span class="cnt">{{ renderC() }}</span>
+        </div>
+        <div class="node sm" [class.skipped]="tick() > 0">
+          <span class="lbl">D</span><span class="cnt">{{ renderD() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="branch">
+      <div class="node target-node" [class.dirty]="tick() > 0">
+        <span class="lbl">E</span>
+        <span class="cnt hot">{{ renderE() }}</span>
+        <span class="tag">← signal.set()</span>
+      </div>
+      <div class="connector-v short"></div>
+      <div class="tree-row tight">
+        <div class="node sm" [class.refreshed]="tick() > 0">
+          <span class="lbl">F</span>
+          <span class="cnt">{{ renderF() }}</span>
+          <span class="binding">{{ "{{ title() }}" }}</span>
+        </div>
+        <div class="node sm" [class.refreshed]="tick() > 0">
+          <span class="lbl">G</span>
+          <span class="cnt">{{ renderG() }}</span>
+          <span class="binding">{{ "{{ count() }}" }}</span>
+        </div>
+        <div class="node sm" [class.skipped]="tick() > 0">
+          <span class="lbl">H</span>
+          <span class="cnt">{{ renderH() }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="dot green"></span> Re-renderizado
+    &nbsp;<span class="dot blue"></span> Ancestro marcado
+    &nbsp;<span class="dot gray"></span> Saltado (no dirty)
+  </div>
+</div>

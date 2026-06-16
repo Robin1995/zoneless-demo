@@ -1,0 +1,57 @@
+<!-- setInterval -->
+<div class="demo-card">
+  <div class="card-header">
+    <span class="card-title">setInterval</span>
+    <span class="value-badge" [class.stale]="timerStale" [class.fixed]="!timerStale">
+      {{ timerValue }}s
+    </span>
+    @if (timerRunning && timerStale) {
+      <span class="stale-tag">stale — sin markForCheck()</span>
+    }
+  </div>
+  <p class="card-desc">
+    Sin <code>markForCheck()</code> la vista queda congelada aunque el valor
+    cambie. Presiona <strong>Start sin fix</strong> para verlo.
+  </p>
+  <div class="controls">
+    <button class="danger-outline" (click)="startTimerStale()" [disabled]="timerRunning">
+      Start sin fix
+    </button>
+    <button class="primary" (click)="startTimerFixed()" [disabled]="timerRunning">
+      Start con markForCheck()
+    </button>
+    <button (click)="stopTimer()" [disabled]="!timerRunning">Stop</button>
+    <button (click)="resetTimer()">Reset</button>
+  </div>
+</div>
+
+<!-- HTTP subscribe -->
+<div class="demo-card">
+  <div class="card-header">
+    <span class="card-title">HTTP + subscribe</span>
+    @if (loading && !postStale) {
+      <span class="value-badge loading">cargando</span>
+    }
+    @if (postStale) {
+      <span class="stale-tag">stale — sin markForCheck()</span>
+    }
+  </div>
+  <p class="card-desc">
+    Presiona <strong>Fetch sin fix</strong> — la vista no muestra
+    el spinner ni el resultado. Con <strong>Fetch con markForCheck()</strong> sí.
+  </p>
+  @if (post && !postStale) {
+    <div class="post-card">
+      <span class="post-id">#{{ post.id }}</span>
+      <span class="post-title">{{ post.title }}</span>
+    </div>
+  }
+  <div class="controls">
+    <button class="danger-outline" (click)="fetchStale()">
+      Fetch sin fix
+    </button>
+    <button class="primary" (click)="fetchFixed()">
+      Fetch con markForCheck()
+    </button>
+  </div>
+</div>
