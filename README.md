@@ -8,16 +8,11 @@ Cada sección es una demo funcional que puedes mostrar mientras explicas el conc
 ## Cómo levantar el proyecto
 
 ```bash
-# Desde la raíz del proyecto
-cd /Users/robinson.rodriguez/projects/zoneless/zoneless-demo
-
-# Levantar el servidor de desarrollo
+npm install
 ng serve --open
-# o si ng no está en el PATH:
-node node_modules/@angular/cli/bin/ng.js serve --open
 ```
 
-> La app corre en `http://localhost:4200` y ya tiene `provideZonelessChangeDetection()` habilitado —  
+> La app corre en `http://localhost:4200` con `provideZonelessChangeDetection()` habilitado —  
 > **no hay zone.js en el bundle**.
 
 ---
@@ -26,15 +21,21 @@ node node_modules/@angular/cli/bin/ng.js serve --open
 
 ```
 src/
-├── main.ts                          ← bootstrapApplication con provideZonelessChangeDetection()
+├── main.ts                               ← bootstrapApplication con provideZonelessChangeDetection()
 ├── app/
-│   ├── app.component.ts             ← Shell con navegación entre demos
-│   ├── app.routes.ts                ← Rutas lazy-loaded por feature
+│   ├── app.component.ts                  ← Shell con navegación entre demos
+│   ├── app.routes.ts                     ← Rutas lazy-loaded por feature
 │   └── features/
-│       ├── cd-comparison/           ← Demo 1: Zone vs Zoneless
-│       ├── signals-demo/            ← Demo 2: Signals como reactive consumers
-│       ├── scheduler-demo/          ← Demo 3: notify / markAncestors / markViewDirty
-│       └── extra-tips/              ← Demo 4: afterNextRender, PendingTasks, versiones
+│       ├── cd-comparison/                ← Demo 1: Zone vs Zoneless
+│       │   ├── tree-node/                ← Nodo visual reutilizable
+│       │   ├── zone-tree/                ← Árbol con CD Default (simula Zone-based)
+│       │   └── zoneless-tree/            ← Árbol con OnPush + signals
+│       ├── signals-demo/                 ← Demo 2: Signals como reactive consumers
+│       │   ├── normal-counter/           ← Hijo OnPush con @Input() clásico
+│       │   └── signal-counter/           ← Hijo OnPush con input() signal (API moderna)
+│       ├── scheduler-demo/               ← Demo 3: APIs asíncronas antes vs ahora
+│       │   └── old-style-demo/           ← Componente OnPush con variables normales
+│       └── extra-tips/                   ← Demo 4: afterNextRender, PendingTasks, versiones
 ```
 
 ---
@@ -51,25 +52,21 @@ src/
 La diferencia entre detección de cambios **global top-down** (Zone.js) y **semi-local targeted** (Zoneless).
 
 **Qué hay en pantalla:**  
-Dos árboles de componentes idénticos (A → B/E → C/D/F/G/H). Ambos representan la misma app.  
-El nodo **E** es el que recibe el cambio de estado.
+Dos árboles de componentes (A → B/E → C/D/F/G/H). El nodo **E** es el que recibe el cambio.
 
-**Cómo usarlo en la demo:**
+**Cómo usarlo:**
 
-1. Presiona **"Cambio en E → appRef.tick()"** en el árbol Zone-based.
-   - Todos los nodos se iluminan en verde → el árbol entero se chequea.
-   - Los contadores suben en **todos** los nodos: A, B, C, D, E, F, G, H.
-   - El contador "nodos chequeados" muestra **8/8**.
+1. Presiona **"Cambio en E → appRef.tick()"** (Zone-based).
+   - Todos los nodos se iluminan — el árbol entero se chequea.
+   - Contador: **8 nodos chequeados**.
 
-2. Presiona **"signal.set() → notify()"** en el árbol Zoneless.
-   - Solo se iluminan: **A** (ancestro marcado), **E** (fuente del cambio), **F** y **G** (hijos que consumen el signal).
-   - B, C, D, H quedan en gris/opaco → **saltados, no chequeados**.
-   - El contador "nodos saltados" muestra **4**.
+2. Presiona **"signal.set() → notify()"** (Zoneless).
+   - Solo A (ancestro), E (fuente), F y G (consumen el signal) se actualizan.
+   - B, C, D, H quedan opacos — saltados.
+   - Contador: **4 chequeados / 4 saltados**.
 
-3. Presiona varias veces en ambos y compara los contadores acumulados.
-
-**Punto clave para decir:**  
-> *"Con Zone.js, cualquier evento async — un click, un timer, un fetch — dispara appRef.tick() y Angular recorre TODO el árbol. Con Zoneless, solo se renderizan los componentes que realmente cambiaron."*
+**Punto clave:**  
+> *"Con Zone.js cualquier evento async recorre TODO el árbol. Con Zoneless solo se renderizan los componentes que realmente cambiaron."*
 
 ---
 
@@ -78,66 +75,50 @@ El nodo **E** es el que recibe el cambio de estado.
 **Ruta:** `/signals-demo`
 
 **Concepto que demuestra:**  
-Por qué las variables normales no funcionan en Zoneless, y cómo un Signal convierte la vista en un **reactive consumer** del grafo de signals.
+Por qué las variables normales fallan en Zoneless con `OnPush`, y cómo los signals y la API `input()` resuelven el problema.
 
 **Qué hay en pantalla:**  
-Dos paneles lado a lado:
-- **Izquierda:** variable normal (`normalCount = 0`)
-- **Derecha:** signal (`count = signal(0)`) con dos `computed()` derivados
+Tres escenarios con el mismo componente hijo (`OnPush`):
 
-**Cómo usarlo en la demo:**
+- **Escenario A** — El padre muta `user.score++` directamente (misma referencia).  
+  El hijo **no se re-renderiza** — la vista queda stale.
 
-1. Presiona **"normalCount++"** varias veces.
-   - El número en pantalla **no cambia** (o cambia solo al hacer otras interacciones).
-   - La advertencia en rojo explica por qué: sin Zone.js no hay nadie que dispare la CD.
-   - El log muestra el mensaje: *"template NO se actualiza en Zoneless sin markForCheck"*.
+- **Escenario B** — El padre crea `{ ...user, score: n+1 }` (nueva referencia).  
+  El hijo **sí se re-renderiza** — `OnPush` detecta el cambio de `@Input`.
 
-2. Presiona **"count.update(n => n+1)"** en el panel de Signals.
-   - El valor se actualiza **instantáneamente**.
-   - Los `computed()` (`doubled`, `isEven`) se recalculan solos.
-   - El `effect()` en el log se dispara automáticamente.
+- **Escenario C** — Usa `input()` signal (API moderna de Angular 17+).  
+  El input **es** un Signal. El hijo puede derivar `computed()` y `effect()` directamente,  
+  sin `ngOnChanges` ni `SimpleChanges`. Reactive consumer nativo.
 
-3. Muestra el código al final de la página que contrasta ambos enfoques.
-
-**Punto clave para decir:**  
-> *"El template de un componente es un 'reactive consumer' en el grafo de signals. Cuando un signal cambia, Angular sabe exactamente qué vista consumía ese valor y la marca como dirty — sin necesidad de Zone.js."*
+**Punto clave:**  
+> *"OnPush con objetos mutados es la trampa más común al migrar. La solución es inmutabilidad (spread) o directamente signals con `input()`."*
 
 ---
 
-### Demo 3 — `scheduler-demo` · 🔔 Operaciones del Scheduler
+### Demo 3 — `scheduler-demo` · � Detección de cambios: antes vs ahora
 
 **Ruta:** `/scheduler-demo`
 
 **Concepto que demuestra:**  
-Las tres operaciones internas del **Zoneless Scheduler** que reemplazan el `onMicrotaskEmpty` de Zone.js.
+En Zoneless, las APIs del browser (`setInterval`, HTTP) no triggean CD automáticamente.  
+Cómo se manejaba antes (manual) vs cómo se maneja ahora (APIs reactivas).
 
 **Qué hay en pantalla:**  
-- Dos "vistas" reactivas que consumen un signal (`stateValue`) y un `computed()`.
-- Tres tarjetas clicables: `notify()`, `markAncestors`, `markViewDirty`.
-- Un log en tiempo real que muestra cada operación con timestamp de milisegundos.
+Dos columnas:
 
-**Cómo usarlo en la demo:**
+**Izquierda — `OldStyleDemoComponent` (OnPush, variables normales):**
+- **setInterval sin fix**: el intervalo corre (el log lo prueba en tiempo real) pero la vista queda congelada porque no hay `markForCheck()`.
+- **setInterval con markForCheck()**: la vista se actualiza en cada tick.
+- **HTTP sin fix**: la respuesta llega (visible en el log) pero la vista no cambia.
+- **HTTP con markForCheck()**: funciona correctamente, pero requiere dos llamadas manuales.
 
-1. Haz clic en **`notify()`**.
-   - Las vistas se iluminan (animación glow).
-   - El log muestra la secuencia completa:
-     ```
-     notify    signal.set(1) → scheduler.notify() → CD en próximo frame
-     mark      markAncestors(viewRef) → ancestros marcados como HasChildViewsToRefresh
-     render    Solo SchedulerDemoComponent re-renderiza
-     ```
-   - El valor en las vistas sube en +1.
+**Derecha — signals + resource APIs:**
+- `signal.update()` en el intervalo → CD automática, cero `markForCheck()`.
+- `httpResource()` → declarativo y reactivo. Cambia el id signal y la request se reenvía sola.
+- `rxResource()` → igual pero el loader devuelve un Observable — interop con RxJS.
 
-2. Haz clic en **`markAncestors`**.
-   - No cambia el valor de la vista, pero el log muestra el recorrido hacia la raíz.
-   - Explica que esto es lo que sucede internamente cuando un signal notifica.
-
-3. Haz clic en **`markViewDirty`**.
-   - Muestra que también puedes marcar una vista manualmente sin signal.
-   - Equivalente a `ChangeDetectorRef.markForCheck()` que ya conocen.
-
-**Punto clave para decir:**  
-> *"El scheduler zoneless tiene tres operaciones: notify() cuando algo cambia, markAncestors para subir la marca hacia la raíz, y markViewDirty para marcar la vista exacta. En Zone.js esto era automático pero opaco. En Zoneless es explícito y predecible."*
+**Punto clave:**  
+> *"El patrón `markForCheck()` no desaparece — sigue siendo válido. Pero con signals y resource APIs ya no necesitas pensar en ello: el scheduler lo gestiona solo."*
 
 ---
 
@@ -146,37 +127,27 @@ Las tres operaciones internas del **Zoneless Scheduler** que reemplazan el `onMi
 **Ruta:** `/extra-tips`
 
 **Concepto que demuestra:**  
-Qué cambia en el código cuando migras a Zoneless: APIs que desaparecen, reemplazos, y la hoja de ruta de versiones.
+Qué cambia en el código al migrar a Zoneless: APIs que son no-ops, reemplazos, y la hoja de ruta de versiones.
 
 **Qué hay en pantalla:**  
-Cuatro tarjetas con código + una tabla de versiones al final.
+Cuatro tarjetas + tabla de versiones.
 
-**Cómo recorrerla:**
+1. **`afterNextRender / afterEveryRender`** — Reemplaza `NgZone.onStable.pipe(take(1))`.  
+   Presiona el botón para ver el timestamp en tiempo real.
 
-1. **`afterNextRender / afterEveryRender`** — Muestra el botón interactivo.
-   - Presiona "Ejecutar afterNextRender()" y observa el timestamp que aparece.
-   - Explica que reemplaza `NgZone.onStable.pipe(take(1)).subscribe(...)`.
+2. **NgZone — no-ops seguros** — `run()` y `runOutsideAngular()` no hacen nada en Zoneless  
+   pero tampoco rompen nada. `onMicrotaskEmpty`, `onStable`, `onUnstable` nunca se disparan.
 
-2. **NgZone — no-ops seguros** — Muestra el código estático.
-   - `NgZone.run()` y `runOutsideAngular()` se vuelven no-ops → no rompen nada.
-   - `NgZone.isInAngularZone()` siempre retorna `true` → evitar como condición.
-   - `onMicrotaskEmpty`, `onUnstable`, `onStable` **nunca se disparan**.
+3. **SSR — PendingTasks** — Con Zone.js Angular esperaba los async automáticamente.  
+   Con Zoneless hay que señalarlo explícitamente con `PendingTasks.add()`.
 
-3. **SSR — PendingTasks** — Muestra el snippet de código.
-   - En SSR con Zone.js, Angular esperaba automáticamente a que terminaran los async.
-   - Con Zoneless hay que señalar explícitamente el trabajo pendiente con `PendingTasks.add()`.
+4. **Dev Safeguard** — `provideCheckNoChangesConfig` detecta mutaciones de estado  
+   que no pasaron por signals. Solo en development.
 
-4. **Dev Safeguard** — Muestra `provideCheckNoChangesConfig`.
-   - Herramienta de desarrollo que detecta mutaciones de estado que no pasaron por signals.
-   - Solo usar en development, nunca en producción.
+5. **Tabla de versiones** — v17.1 (experimental) → v20 (estable) → v21+ (default) → v22 (estándar).
 
-5. **Tabla de versiones** — Úsala como cierre.
-   - Recorre la línea v17.1 → v18 → v20 → v21+ → v22.
-   - Destaca que en **v20 (actual) ya es estable** con `provideZonelessChangeDetection()`.
-   - En **v21+ ya es el default** — no necesitas ningún provider.
-
-**Punto clave para decir:**  
-> *"La migración es incremental. Hoy puedes activar Zoneless con una línea. Si tu app usa OnPush, ya es compatible. Angular 22 lo convierte en el estándar — zone.js queda como opt-in legacy."*
+**Punto clave:**  
+> *"La migración es incremental. Una línea activa Zoneless hoy. Angular 22 lo convierte en el estándar — zone.js queda como opt-in legacy."*
 
 ---
 
@@ -188,23 +159,24 @@ bootstrapApplication(AppComponent, {
   providers: [
     provideZonelessChangeDetection(), // ← esta es la única línea que cambia
     provideRouter(routes),
+    provideHttpClient(),
   ],
 });
 ```
 
-Toda la app corre sin `zone.js` en los polyfills. Puedes demostrarlo abriendo  
-**DevTools → Network → Filter: zone** → no hay ninguna petición de `zone.js`.
+Puedes verificar que no hay zone.js abriendo  
+**DevTools → Network → Filter: zone** → no hay ninguna petición.
 
 ---
 
 ## Stack técnico
 
-| Qué | Versión |
-|-----|---------|
+| Qué | Versión / Detalle |
+|-----|-------------------|
 | Angular | 20.x |
 | Change Detection | `provideZonelessChangeDetection()` |
-| State | Signals (`signal`, `computed`, `effect`) |
+| State | `signal`, `computed`, `effect`, `input()` |
+| HTTP | `httpResource`, `rxResource` |
 | Componentes | Standalone, `ChangeDetectionStrategy.OnPush` |
 | Routing | Lazy-loaded por feature |
-| Estilos | SCSS inline en cada componente |
 | zone.js | ❌ No incluido |
